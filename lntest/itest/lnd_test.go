@@ -15376,7 +15376,6 @@ var testsCases = []*testCase{
 		name: "REST API",
 		test: testRestApi,
 	},
-<<<<<<< HEAD
 	{
 		name: "intercept forwarded htlc packets",
 		test: testForwardInterceptor,
@@ -15385,13 +15384,10 @@ var testsCases = []*testCase{
 		name: "wumbo channels",
 		test: testWumboChannels,
 	},
-||||||| constructed merge base
-=======
 	{
 		name: "stateless init",
 		test: testStatelessInit,
 	},
->>>>>>> lnd_test: add integration tests for stateless init
 }
 
 // TestLightningNetworkDaemon performs a series of integration tests amongst a

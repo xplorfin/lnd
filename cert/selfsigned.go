@@ -36,7 +36,7 @@ var (
 
 // ipAddresses returns the parserd IP addresses to use when creating the TLS
 // certificate.
-func ipAddresses(tlsExtraIPs []string) ([]net.IP, error) {
+func ipAddresses(tlsExtraIPs []string, TLSDisableAutofill bool) ([]net.IP, error) {
 	// Collect the host's IP addresses, including loopback, in a slice.
 	ipAddresses := []net.IP{net.ParseIP("127.0.0.1"), net.ParseIP("::1")}
 
@@ -50,15 +50,18 @@ func ipAddresses(tlsExtraIPs []string) ([]net.IP, error) {
 		ipAddresses = append(ipAddresses, ipAddr)
 	}
 
-	// Add all the interface IPs that aren't already in the slice.
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		return nil, err
-	}
-	for _, a := range addrs {
-		ipAddr, _, err := net.ParseCIDR(a.String())
-		if err == nil {
-			addIP(ipAddr)
+	// If TLSDisableAutofill is false, then add network inteface IPs
+	if !TLSDisableAutofill {
+		// Add all the interface IPs that aren't already in the slice.
+		addrs, err := net.InterfaceAddrs()
+		if err != nil {
+			return nil, err
+		}
+		for _, a := range addrs {
+			ipAddr, _, err := net.ParseCIDR(a.String())
+			if err == nil {
+				addIP(ipAddr)
+			}
 		}
 	}
 
@@ -75,10 +78,11 @@ func ipAddresses(tlsExtraIPs []string) ([]net.IP, error) {
 
 // dnsNames returns the host and DNS names to use when creating the TLS
 // ceftificate.
-func dnsNames(tlsExtraDomains []string) (string, []string) {
+func dnsNames(tlsExtraDomains []string, TLSDisableAutofill bool) (string, []string) {
 	// Collect the host's names into a slice.
 	host, err := os.Hostname()
-	if err != nil {
+	// If TLSDisableAutofill is true, don't use the hostname
+	if err != nil || TLSDisableAutofill {
 		// Nothing much we can do here, other than falling back to
 		// localhost as fallback. A hostname can still be provided with
 		// the tlsExtraDomain parameter if the problem persists on a
@@ -91,6 +95,11 @@ func dnsNames(tlsExtraDomains []string) (string, []string) {
 		dnsNames = append(dnsNames, "localhost")
 	}
 	dnsNames = append(dnsNames, tlsExtraDomains...)
+	// if TLSDisableAutofill is true and there is an extra domain set,
+	// use the first one as the Comman Name
+	if TLSDisableAutofill && len(tlsExtraDomains) > 0 {
+		host = tlsExtraDomains[0]
+	}
 
 	// Also add fake hostnames for unix sockets, otherwise hostname
 	// verification will fail in the client.
@@ -107,10 +116,10 @@ func dnsNames(tlsExtraDomains []string) (string, []string) {
 // and domains given. The certificate is considered up to date if it was
 // created with _exactly_ the IPs and domains given.
 func IsOutdated(cert *x509.Certificate, tlsExtraIPs,
-	tlsExtraDomains []string) (bool, error) {
+	tlsExtraDomains []string, TLSDisableAutofill bool) (bool, error) {
 
 	// Parse the slice of IP strings.
-	ips, err := ipAddresses(tlsExtraIPs)
+	ips, err := ipAddresses(tlsExtraIPs, TLSDisableAutofill)
 	if err != nil {
 		return false, err
 	}
@@ -150,7 +159,7 @@ func IsOutdated(cert *x509.Certificate, tlsExtraIPs,
 	}
 
 	// Get the full list of DNS names to use.
-	_, dnsNames := dnsNames(tlsExtraDomains)
+	_, dnsNames := dnsNames(tlsExtraDomains, TLSDisableAutofill)
 
 	// We do the same kind of deduplication for the DNS names.
 	dns1 := make(map[string]struct{})
@@ -192,7 +201,7 @@ func IsOutdated(cert *x509.Certificate, tlsExtraIPs,
 // https://github.com/btcsuite/btcutil
 func GenCertPair(org, certFile, keyFile string, tlsExtraIPs,
 	tlsExtraDomains []string, certValidity time.Duration, encryptKey bool,
-	keyRing keychain.KeyRing) ([]byte, []byte, error) {
+	keyRing keychain.KeyRing, TLSDisableAutofill bool) ([]byte, []byte, error) {
 
 	now := time.Now()
 	validUntil := now.Add(certValidity)
@@ -210,8 +219,8 @@ func GenCertPair(org, certFile, keyFile string, tlsExtraIPs,
 
 	// Get all DNS names and IP addresses to use when creating the
 	// certificate.
-	host, dnsNames := dnsNames(tlsExtraDomains)
-	ipAddresses, err := ipAddresses(tlsExtraIPs)
+	host, dnsNames := dnsNames(tlsExtraDomains, TLSDisableAutofill)
+	ipAddresses, err := ipAddresses(tlsExtraIPs, TLSDisableAutofill)
 	if err != nil {
 		return nil, nil, err
 	}
