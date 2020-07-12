@@ -2,12 +2,33 @@ package chanbackup
 
 import (
 	"bytes"
+	"fmt"
 	"net"
 	"testing"
 
+	"github.com/btcsuite/btcd/btcec"
+	"github.com/lightningnetwork/lnd/keychain"
 	"github.com/lightningnetwork/lnd/lnencrypt"
 	"github.com/lightningnetwork/lnd/lntest/mock"
 )
+
+type mockKeyRing struct {
+	fail bool
+}
+
+func (m *mockKeyRing) DeriveNextKey(keyFam keychain.KeyFamily) (keychain.KeyDescriptor, error) {
+	return keychain.KeyDescriptor{}, nil
+}
+func (m *mockKeyRing) DeriveKey(keyLoc keychain.KeyLocator) (keychain.KeyDescriptor, error) {
+	if m.fail {
+		return keychain.KeyDescriptor{}, fmt.Errorf("fail")
+	}
+
+	_, pub := btcec.PrivKeyFromBytes(btcec.S256(), testWalletPrivKey)
+	return keychain.KeyDescriptor{
+		PubKey: pub,
+	}, nil
+}
 
 // TestMultiPackUnpack...
 func TestMultiPackUnpack(t *testing.T) {
