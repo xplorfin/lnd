@@ -252,8 +252,8 @@ func GenCertPair(org, certFile, keyFile string, tlsExtraIPs,
 
 		KeyUsage: x509.KeyUsageKeyEncipherment |
 			x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		IsCA:                  true, // so can sign self.
+		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		IsCA:        true, // so can sign self.
 		BasicConstraintsValid: true,
 
 		DNSNames:    dnsNames,

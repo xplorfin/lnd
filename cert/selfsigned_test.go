@@ -8,8 +8,10 @@ import (
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/lightningnetwork/lnd/cert"
+	"github.com/lightningnetwork/lnd/keychain"
 	"github.com/lightningnetwork/lnd/lnencrypt"
 	"github.com/lightningnetwork/lnd/lntest/mock"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -27,6 +29,24 @@ var (
 		privKeyBytes[:])
 )
 
+type mockKeyRing struct {
+	fail bool
+}
+
+func (m *mockKeyRing) DeriveNextKey(keyFam keychain.KeyFamily) (keychain.KeyDescriptor, error) {
+	return keychain.KeyDescriptor{}, nil
+}
+func (m *mockKeyRing) DeriveKey(keyLoc keychain.KeyLocator) (keychain.KeyDescriptor, error) {
+	if m.fail {
+		return keychain.KeyDescriptor{}, fmt.Errorf("fail")
+	}
+
+	_, pub := btcec.PrivKeyFromBytes(btcec.S256(), testWalletPrivKey)
+	return keychain.KeyDescriptor{
+		PubKey: pub,
+	}, nil
+}
+
 // TestIsOutdatedCert checks that we'll consider the TLS certificate outdated
 // if the ip addresses or dns names don't match.
 func TestIsOutdatedCert(t *testing.T) {
@@ -38,6 +58,7 @@ func TestIsOutdatedCert(t *testing.T) {
 	keyRing := &mock.SecretKeyRing{}
 	certPath := tempDir + "/tls.cert"
 	keyPath := tempDir + "/tls.key"
+	keyRing := &mockKeyRing{}
 
 	// Generate TLS files with two extra IPs and domains.
 	_, _, err = cert.GenCertPair(
@@ -103,6 +124,7 @@ func TestIsOutdatedPermutation(t *testing.T) {
 	keyRing := &mock.SecretKeyRing{}
 	certPath := tempDir + "/tls.cert"
 	keyPath := tempDir + "/tls.key"
+	keyRing := &mockKeyRing{}
 
 	// Generate TLS files from the IPs and domains.
 	_, _, err = cert.GenCertPair(
