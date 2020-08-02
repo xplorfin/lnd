@@ -703,6 +703,17 @@ func Main(cfg *Config, lisCfg ListenerCfg, shutdownChan <-chan struct{}) error {
 			ltndLog.Error(err)
 			return err
 		}
+
+		// We also must regenerate the serverOpts and resetDialOpts to use the
+		// persistent certificate on the main gRPC server.
+		serverCreds = credentials.NewTLS(tlsCfg)
+		serverOpts = []grpc.ServerOption{grpc.Creds(serverCreds)}
+		restDialOpts = []grpc.DialOption{
+			grpc.WithTransportCredentials(*restCreds),
+			grpc.WithDefaultCallOptions(
+				grpc.MaxCallRecvMsgSize(1 * 1024 * 1024 * 200),
+			),
+		}
 	}
 
 	// rpcListeners is a closure we'll hand to the rpc server, that will be
