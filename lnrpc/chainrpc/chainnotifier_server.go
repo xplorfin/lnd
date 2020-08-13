@@ -113,8 +113,8 @@ func New(cfg *Config) (*Server, lnrpc.MacaroonPerms, error) {
 	// check to see if we need to create it or not. If stateless_init is set
 	// then we don't write the macaroons.
 	macFilePath := cfg.ChainNotifierMacPath
-	if cfg.MacService != nil && !cfg.MacService.StatelessInit 
-		&& !fileExists(macFilePath){
+	if cfg.MacService != nil && !cfg.MacService.StatelessInit &&
+		!fileExists(macFilePath) {
 		log.Infof("Baking macaroons for ChainNotifier RPC Server at: %v",
 			macFilePath)
 
