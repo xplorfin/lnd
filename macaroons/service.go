@@ -28,6 +28,9 @@ var (
 type Service struct {
 	bakery.Bakery
 
+	// Tells the Service if it should write macaroons to disk or not
+	StatelessInit bool
+
 	rks *RootKeyStorage
 }
 
@@ -38,7 +41,7 @@ type Service struct {
 // listing the same checker more than once is not harmful. Default checkers,
 // such as those for `allow`, `time-before`, `declared`, and `error` caveats
 // are registered automatically and don't need to be added.
-func NewService(dir string, checks ...Checker) (*Service, error) {
+func NewService(dir string, statelessInit bool, checks ...Checker) (*Service, error) {
 	// Ensure that the path to the directory exists.
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if err := os.MkdirAll(dir, 0700); err != nil {
@@ -81,7 +84,7 @@ func NewService(dir string, checks ...Checker) (*Service, error) {
 		}
 	}
 
-	return &Service{*svc, rootKeyStore}, nil
+	return &Service{*svc, statelessInit, rootKeyStore}, nil
 }
 
 // isRegistered checks to see if the required checker has already been
@@ -179,8 +182,8 @@ func (svc *Service) ValidateMacaroon(ctx context.Context,
 		return err
 	}
 
-	// Check the method being called against the permitted operation and
-	// the expiration time and IP address and return the result.
+	// Check the method being called against the permitted operation, the
+	// expiration time and IP address and return the result.
 	authChecker := svc.Checker.Auth(macaroon.Slice{mac})
 	_, err = authChecker.Allow(ctx, requiredPermissions...)
 	return err
@@ -196,4 +199,16 @@ func (svc *Service) Close() error {
 // the result.
 func (svc *Service) CreateUnlock(password *[]byte) error {
 	return svc.rks.CreateUnlock(password)
+}
+
+// GenerateNewRootKey calls the underlying root key store's GenerateNewRootKey
+// and returns the result.
+func (svc *Service) GenerateNewRootKey() error {
+	return svc.rks.GenerateNewRootKey()
+}
+
+// ChangePassword calls the underlying root key store's ChangePassword and
+// returns the result.
+func (svc *Service) ChangePassword(oldPw, newPw []byte) error {
+	return svc.rks.ChangePassword(oldPw, newPw)
 }
