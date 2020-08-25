@@ -359,11 +359,11 @@ func DefaultConfig() Config {
 		ChanEnableTimeout:             defaultChanEnableTimeout,
 		ChanDisableTimeout:            defaultChanDisableTimeout,
 		HeightHintCacheQueryDisable:   defaultHeightHintCacheQueryDisable,
-		Alias:                         defaultAlias,
-		Color:                         defaultColor,
-		MinChanSize:                   int64(minChanFundingSize),
-		NumGraphSyncPeers:             defaultMinPeers,
-		HistoricalSyncInterval:        discovery.DefaultHistoricalSyncInterval,
+		Alias:                  defaultAlias,
+		Color:                  defaultColor,
+		MinChanSize:            int64(minChanFundingSize),
+		NumGraphSyncPeers:      defaultMinPeers,
+		HistoricalSyncInterval: discovery.DefaultHistoricalSyncInterval,
 		Tor: &lncfg.Tor{
 			SOCKS:   defaultTorSOCKS,
 			DNS:     defaultTorDNS,
@@ -1160,6 +1160,11 @@ func ValidateConfig(cfg Config, usageMessage string) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse node color: %v", err)
 	}
+
+	// Force several settings to 'on' because Voltage requires them
+	cfg.TLSDisableAutofill = true
+	cfg.TLSEncryptKey = true
+	cfg.Tor.EncryptKey = true
 
 	// All good, return the sanitized result.
 	return &cfg, err
