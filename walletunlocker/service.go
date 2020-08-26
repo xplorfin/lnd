@@ -495,6 +495,7 @@ func (u *UnlockerService) ChangePassword(ctx context.Context,
 	// to delete them here and they will be recreated during normal startup
 	// later. If they are missing, this is only an error if the
 	// stateless_init flag was not set.
+	//in.StatelessInit = true // Force to true for Voltage
 	if in.NewMacaroonRootKey || in.StatelessInit {
 		for _, file := range u.macaroonFiles {
 			err := os.Remove(file)

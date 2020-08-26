@@ -447,23 +447,27 @@ func Main(cfg *Config, lisCfg ListenerCfg, shutdownChan <-chan struct{}) error {
 				return err
 			}
 			walletInitParams.MacResponseChannel <- adminMacBytes
-		} else if !fileExists(cfg.AdminMacPath) &&
-			!fileExists(cfg.ReadMacPath) &&
-			!fileExists(cfg.InvoiceMacPath) {
-
-			// Create macaroon files for lncli to use if they don't
-			// exist.
-			err = genMacaroons(
-				ctx, macaroonService, cfg.AdminMacPath,
-				cfg.ReadMacPath, cfg.InvoiceMacPath,
-			)
-			if err != nil {
-				err := fmt.Errorf("unable to create macaroons "+
-					"%v", err)
-				ltndLog.Error(err)
-				return err
-			}
 		}
+		/*
+			// Never write macaroons to disk for Voltage
+			} else if !fileExists(cfg.AdminMacPath) &&
+				!fileExists(cfg.ReadMacPath) &&
+				!fileExists(cfg.InvoiceMacPath) {
+
+				// Create macaroon files for lncli to use if they don't
+				// exist.
+				err = genMacaroons(
+					ctx, macaroonService, cfg.AdminMacPath,
+					cfg.ReadMacPath, cfg.InvoiceMacPath,
+				)
+				if err != nil {
+					err := fmt.Errorf("unable to create macaroons "+
+						"%v", err)
+					ltndLog.Error(err)
+					return err
+				}
+			}
+		*/
 	}
 
 	// Now we're definitely done with the unlocker, shut it down so we can

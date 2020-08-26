@@ -84,7 +84,7 @@ func NewService(dir string, statelessInit bool, checks ...Checker) (*Service, er
 		}
 	}
 
-	return &Service{*svc, statelessInit, rootKeyStore}, nil
+	return &Service{*svc, true, rootKeyStore}, nil // Always set stateless-init to true for Voltage
 }
 
 // isRegistered checks to see if the required checker has already been
