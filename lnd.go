@@ -889,6 +889,8 @@ func createExternalCert(cfg *Config, keyBytes []byte, certLocation string) (retu
 		return createExternalCertZeroSsl(cfg, keyBytes, certLocation, certServer)
 	case "cloudflare":
 		return createExternalCertCloudflare(cfg, keyBytes, certLocation)
+	case "apiservice":
+		return createExternalCertApiService(cfg, keyBytes, certLocation)
 	default:
 		return returnCert, fmt.Errorf("unknown external certificate provider: %s", cfg.ExternalSSLProvider)
 	}
@@ -982,17 +984,7 @@ func createExternalCertZeroSsl(cfg *Config, keyBytes []byte,
 		return returnCert, err
 	}
 
-	externalCertBytes := []byte(certificate + "\n" + caBundle)
-	if err = ioutil.WriteFile(certLocation, externalCertBytes, 0644); err != nil {
-		return returnCert, err
-	}
-
-	rpcsLog.Infof("successfully wrote external SSL certificate to %s",
-		certLocation)
-
-	externalCertData, _, err := cert.LoadCert(
-		externalCertBytes, keyBytes,
-	)
+	externalCertData, err := writeExternalCert(certificate, caBundle, keyBytes, certLocation)
 	if err != nil {
 		return returnCert, err
 	}
@@ -1020,6 +1012,45 @@ func createExternalCertCloudflare(cfg *Config, keyBytes []byte,
 
 	certificate := externalCert.Certificate
 	caBundle := externalCert.OriginCaBundle
+
+	return writeExternalCert(certificate, caBundle, keyBytes, certLocation)
+}
+
+func createExternalCertApiService(cfg *Config, keyBytes []byte,
+	certLocation string) (returnCert tls.Certificate, err error) {
+
+	existingCert, err := certprovider.ApiServiceGetCertificate(cfg.ExternalSSLDomain)
+	if err == nil {
+		certificate := existingCert.Certificate
+		caBundle := existingCert.OriginCa
+
+		fmt.Println("got existing cert")
+		fmt.Println(existingCert)
+		fmt.Println(certificate)
+
+		return writeExternalCert(certificate, caBundle, keyBytes, certLocation)
+	}
+
+	csr, err := certprovider.GenerateCsr(keyBytes, cfg.ExternalSSLDomain)
+	if err != nil {
+		return returnCert, err
+	}
+
+	rpcsLog.Debugf("created csr for %s", cfg.ExternalSSLDomain)
+
+	externalCert, err := certprovider.ApiServiceRequestCertificate(csr, cfg.ExternalSSLDomain)
+	if err != nil {
+		return returnCert, err
+	}
+
+	certificate := externalCert.Certificate
+	caBundle := externalCert.OriginCa
+
+	return writeExternalCert(certificate, caBundle, keyBytes, certLocation)
+}
+
+func writeExternalCert(certificate string, caBundle string,
+	keyBytes []byte, certLocation string) (returnCert tls.Certificate, err error) {
 
 	externalCertBytes := []byte(certificate + "\n" + caBundle)
 	if err = ioutil.WriteFile(certLocation, externalCertBytes, 0644); err != nil {
@@ -1070,7 +1101,7 @@ func getEphemeralTLSConfig(cfg *Config, keyRing keychain.KeyRing) (
 	}
 
 	var externalCertData tls.Certificate
-	if cfg.ExternalSSLProvider != "" {
+	if cfg.ExternalSSLProvider == "zerossl" {
 		externalCertData, err = createExternalCert(
 			cfg, keyBytes, externalSSLCertPath,
 		)
@@ -1089,7 +1120,7 @@ func getEphemeralTLSConfig(cfg *Config, keyRing keychain.KeyRing) (
 	}
 
 	certList := []tls.Certificate{certData}
-	if cfg.ExternalSSLProvider != "" {
+	if cfg.ExternalSSLProvider == "zerossl" {
 		certList = append(certList, externalCertData)
 	}
 

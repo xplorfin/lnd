@@ -608,7 +608,7 @@ func ValidateConfig(cfg Config, usageMessage string) (*Config, error) {
 			return nil, fmt.Errorf("you must supply a domain when requesting external certificates")
 		}
 
-		supportedSSLProviders := []string{"zerossl", "cloudflare"}
+		supportedSSLProviders := []string{"zerossl", "cloudflare", "apiservice"}
 		isSupported := contains(supportedSSLProviders, cfg.ExternalSSLProvider)
 		if !isSupported {
 			return nil, fmt.Errorf("Received unsupported external ssl provider: %s", cfg.ExternalSSLProvider)

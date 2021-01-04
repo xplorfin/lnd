@@ -21,7 +21,7 @@ const (
 
 const (
 	// cloudflare cert validity lengths
-	certValidityYear = 365
+	certValidityYear int = 365
 	// cloudflare cert request types
 	originRsa = "origin-rsa"
 )
