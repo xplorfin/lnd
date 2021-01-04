@@ -434,13 +434,13 @@ func DefaultConfig() Config {
 		ChanEnableTimeout:             defaultChanEnableTimeout,
 		ChanDisableTimeout:            defaultChanDisableTimeout,
 		HeightHintCacheQueryDisable:   defaultHeightHintCacheQueryDisable,
-		Alias:                  defaultAlias,
-		Color:                  defaultColor,
-		MinChanSize:            int64(minChanFundingSize),
-		MaxChanSize:            int64(0),
-		DefaultRemoteMaxHtlcs:  defaultRemoteMaxHtlcs,
-		NumGraphSyncPeers:      defaultMinPeers,
-		HistoricalSyncInterval: discovery.DefaultHistoricalSyncInterval,
+		Alias:                         defaultAlias,
+		Color:                         defaultColor,
+		MinChanSize:                   int64(minChanFundingSize),
+		MaxChanSize:                   int64(0),
+		DefaultRemoteMaxHtlcs:         defaultRemoteMaxHtlcs,
+		NumGraphSyncPeers:             defaultMinPeers,
+		HistoricalSyncInterval:        discovery.DefaultHistoricalSyncInterval,
 		Tor: &lncfg.Tor{
 			SOCKS:   defaultTorSOCKS,
 			DNS:     defaultTorDNS,
@@ -608,7 +608,7 @@ func ValidateConfig(cfg Config, usageMessage string) (*Config, error) {
 			return nil, fmt.Errorf("you must supply a domain when requesting external certificates")
 		}
 
-		supportedSSLProviders := []string{"zerossl"}
+		supportedSSLProviders := []string{"zerossl", "cloudflare"}
 		isSupported := contains(supportedSSLProviders, cfg.ExternalSSLProvider)
 		if !isSupported {
 			return nil, fmt.Errorf("Received unsupported external ssl provider: %s", cfg.ExternalSSLProvider)
