@@ -314,6 +314,7 @@ func main() {
 		walletBalanceCommand,
 		channelBalanceCommand,
 		getInfoCommand,
+		getTlsCertificateCommand,
 		getRecoveryInfoCommand,
 		pendingChannelsCommand,
 		sendPaymentCommand,

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math"
 	"net"
 	"net/http"
@@ -278,6 +279,10 @@ func MainRPCServerPermissions() map[string][]bakery.Op {
 			Action: "write",
 		}},
 		"/lnrpc.Lightning/GetInfo": {{
+			Entity: "info",
+			Action: "read",
+		}},
+		"/lnrpc.Lightning/GetTlsCertificate": {{
 			Entity: "info",
 			Action: "read",
 		}},
@@ -6743,4 +6748,26 @@ func (r *rpcServer) FundingStateStep(ctx context.Context,
 	// TODO(roasbeef): return resulting state? also add a method to query
 	// current state?
 	return &lnrpc.FundingStateStepResp{}, nil
+}
+
+func (r *rpcServer) GetTlsCertificate(ctx context.Context, in *lnrpc.TlsCertificateRequest) (*lnrpc.TlsCertificateResponse, error) {
+	var (
+		resp     = &lnrpc.TlsCertificateResponse{}
+		certPath string
+	)
+
+	if r.cfg.ExternalSSLProvider != "" {
+		certPath = fmt.Sprintf("%s/%s/tls.cert", r.cfg.LndDir, r.cfg.ExternalSSLProvider)
+	} else {
+		certPath = r.cfg.TLSCertPath
+	}
+
+	cert, err := ioutil.ReadFile(certPath)
+	if err != nil {
+		return nil, err
+	}
+
+	resp.Certificate = cert
+
+	return resp, nil
 }

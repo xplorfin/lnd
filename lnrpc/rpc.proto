@@ -514,6 +514,13 @@ service Lightning {
     */
     rpc ListPermissions (ListPermissionsRequest)
         returns (ListPermissionsResponse);
+
+    /* lncli: `gettlscertificate`
+    GetTlsCertificate returns the raw bytes of the TLS certificate currently in
+    use.
+    */
+    rpc GetTlsCertificate (TlsCertificateRequest)
+        returns (TlsCertificateResponse);
 }
 
 message Utxo {
@@ -2968,7 +2975,7 @@ message AddInvoiceResponse {
     invoices with an add_index greater than this one.
     */
     uint64 add_index = 16;
-    
+
     /*
     The payment address of the generated invoice. This value should be used
     in all payments for this invoice as we require it for end to end
@@ -3506,6 +3513,13 @@ message ChannelBackupSubscription {
 }
 
 message VerifyChanBackupResponse {
+}
+
+message TlsCertificateRequest {
+}
+
+message TlsCertificateResponse {
+    bytes certificate = 1;
 }
 
 message MacaroonPermission {

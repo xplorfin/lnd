@@ -2697,3 +2697,30 @@ func restoreChanBackup(ctx *cli.Context) error {
 
 	return nil
 }
+
+var getTlsCertificateCommand = cli.Command{
+	Name: "gettlscertificate",
+	Usage: "Prints the TLS certificate being used by LND. " +
+		"If config.ExternalSSLProvider is in use, the certificate generated " +
+		"by the external provider will be returned, rather than " +
+		"the self-signed certificate automatically generated " +
+		"by LND on startup.",
+	Action: actionDecorator(getTlsCertificate),
+}
+
+func getTlsCertificate(ctx *cli.Context) error {
+	ctxb := context.Background()
+	client, cleanUp := getClient(ctx)
+	defer cleanUp()
+
+	certResponse, err := client.GetTlsCertificate(ctxb, &lnrpc.TlsCertificateRequest{})
+	if err != nil {
+		return err
+	}
+
+	outBuf := bytes.NewBuffer(certResponse.Certificate)
+
+	fmt.Println(outBuf.String())
+
+	return nil
+}

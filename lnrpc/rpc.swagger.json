@@ -1889,6 +1889,29 @@
         ]
       }
     },
+    "/v1/tlscertificate": {
+      "get": {
+        "summary": "lncli: `gettlscertificate`\nGetTlsCertificate returns the raw bytes of the TLS certificate currently in\nuse.",
+        "operationId": "GetTlsCertificate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/lnrpcTlsCertificateResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "Lightning"
+        ]
+      }
+    },
     "/v1/transactions": {
       "get": {
         "summary": "lncli: `listchaintxns`\nGetTransactions returns a list describing all the known transactions\nrelevant to the wallet.",
@@ -5502,6 +5525,15 @@
         "error": {
           "type": "string",
           "description": "The string representation of the error sent by our peer."
+        }
+      }
+    },
+    "lnrpcTlsCertificateResponse": {
+      "type": "object",
+      "properties": {
+        "certificate": {
+          "type": "string",
+          "format": "byte"
         }
       }
     },

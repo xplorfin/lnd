@@ -41,6 +41,8 @@ http:
       get: "/v1/peers/subscribe"
     - selector: lnrpc.Lightning.GetInfo
       get: "/v1/getinfo"
+    - selector: lnrpc.Lightning.GetTlsCertificate
+      get: "/v1/tlscertificate"
     - selector: lnrpc.Lightning.GetRecoveryInfo
       get: "/v1/getrecoveryinfo"
     - selector: lnrpc.Lightning.PendingChannels

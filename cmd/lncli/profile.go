@@ -45,6 +45,7 @@ func (e *profileEntry) cert() (*x509.CertPool, error) {
 		return nil, fmt.Errorf("credentials: failed to append " +
 			"certificate")
 	}
+
 	return cp, nil
 }
 
