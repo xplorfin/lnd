@@ -7,7 +7,3 @@ rules:
   - base: v0.12.0-beta.rc1
     upstream: getvoltage:v0.12.0-beta.rc1
     mergeMethod: hardreset
-  - base: entropy
-    upstream: getvoltage:v0.12.0-beta.rc1
-    mergeMethod: rebase
-    mergeUnstable: false

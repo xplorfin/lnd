@@ -28,6 +28,10 @@ jobs:
       - name: git checkout
         uses: actions/checkout@v2
 
+      # see: https://github.com/actions/checkout/issues/290
+      - name: Fetch Tags
+        run: git fetch --force --tags
+
       - name: go cache
         uses: actions/cache@v1
         with:

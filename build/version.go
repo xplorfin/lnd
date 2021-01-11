@@ -48,21 +48,8 @@ const (
 
 	// AppPreRelease MUST only contain characters from semanticAlphabet
 	// per the semantic versioning spec.
-	AppPreRelease = "beta.rc1"
+	AppPreRelease = "alpha.4"
 )
-
-func init() {
-	// Assert that AppPreRelease is valid according to the semantic
-	// versioning guidelines for pre-release version and build metadata
-	// strings. In particular it MUST only contain characters in
-	// semanticAlphabet.
-	for _, r := range AppPreRelease {
-		if !strings.ContainsRune(semanticAlphabet, r) {
-			panic(fmt.Errorf("rune: %v is not in the semantic "+
-				"alphabet", r))
-		}
-	}
-}
 
 // Version returns the application version as a properly formed string per the
 // semantic versioning 2.0.0 spec (http://semver.org/).
@@ -73,9 +60,7 @@ func Version() string {
 	// Append pre-release version if there is one. The hyphen called for by
 	// the semantic versioning spec is automatically appended and should not
 	// be contained in the pre-release string.
-	if AppPreRelease != "" {
-		version = fmt.Sprintf("%s-%s", version, AppPreRelease)
-	}
+	version = fmt.Sprintf("%s-%s", version, AppPreRelease)
 
 	return version
 }
