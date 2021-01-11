@@ -10,7 +10,7 @@ defaults:
     shell: bash
 
 env:
-  DOCKER_REPO: xplorfin
+  DOCKER_REPO: entropybtc
   DOCKER_IMAGE: lnd
   
   # If you change this value, please change it in the following files as well:
