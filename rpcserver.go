@@ -1019,10 +1019,11 @@ func allowCORS(handler http.Handler, origins []string) http.Handler {
 		}
 
 		// Set the static header fields first.
-		w.Header().Set(
-			allowHeaders,
-			"Content-Type, Accept, Grpc-Metadata-Macaroon",
-		)
+		// Both a canonicalized and non-canonicalized "grpc-metadata-macaroon" value are
+		// set to allow browsers which perform preflight requests and also don't canonicalize
+		// the HTTP headers they send (*cough cough CHROME*).
+		w.Header()[allowHeaders] = []string{"Content-Type, Accept, Grpc-Metadata-Macaroon, Grpc-Metadata-macaroon"}
+
 		w.Header().Set(allowMethods, "GET, POST, DELETE")
 
 		// Either we allow all origins or the incoming request matches

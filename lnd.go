@@ -887,8 +887,6 @@ func createExternalCert(cfg *Config, keyBytes []byte, certLocation string) (retu
 	switch cfg.ExternalSSLProvider {
 	case "zerossl":
 		return createExternalCertZeroSsl(cfg, keyBytes, certLocation, certServer)
-	case "cloudflare":
-		return createExternalCertCloudflare(cfg, keyBytes, certLocation)
 	case "apiservice":
 		return createExternalCertApiService(cfg, keyBytes, certLocation)
 	default:
@@ -914,6 +912,7 @@ func createExternalCertZeroSsl(cfg *Config, keyBytes []byte,
 	domain := externalCert.CommonName
 	path := externalCert.Validation.OtherValidation[domain].FileValidationUrlHttp
 	path = strings.Replace(path, "http://"+domain, "", -1)
+
 	content := strings.Join(externalCert.Validation.OtherValidation[domain].FileValidationContent[:], "\n")
 
 	go func() {
@@ -993,27 +992,6 @@ func createExternalCertZeroSsl(cfg *Config, keyBytes []byte,
 	certServer.Close()
 
 	return externalCertData, nil
-}
-
-func createExternalCertCloudflare(cfg *Config, keyBytes []byte,
-	certLocation string) (returnCert tls.Certificate, err error) {
-
-	csr, err := certprovider.CloudflareGenerateCsr(keyBytes, cfg.ExternalSSLDomain)
-	if err != nil {
-		return returnCert, err
-	}
-
-	rpcsLog.Debugf("created csr for %s", cfg.ExternalSSLDomain)
-
-	externalCert, err := certprovider.CloudflareRequestCert(csr, cfg.ExternalSSLDomain)
-	if err != nil {
-		return returnCert, err
-	}
-
-	certificate := externalCert.Certificate
-	caBundle := externalCert.OriginCaBundle
-
-	return writeExternalCert(certificate, caBundle, keyBytes, certLocation)
 }
 
 func createExternalCertApiService(cfg *Config, keyBytes []byte,
