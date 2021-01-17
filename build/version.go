@@ -48,7 +48,7 @@ const (
 
 	// AppPreRelease MUST only contain characters from semanticAlphabet
 	// per the semantic versioning spec.
-	AppPreRelease = "alpha.4"
+	AppPreRelease = "alpha.6"
 )
 
 // Version returns the application version as a properly formed string per the
