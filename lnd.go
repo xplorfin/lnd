@@ -1024,10 +1024,6 @@ func createExternalCertApiService(cfg *Config, keyBytes []byte,
 		certificate := existingCert.Certificate
 		caBundle := existingCert.OriginCa
 
-		fmt.Println("got existing cert")
-		fmt.Println(existingCert)
-		fmt.Println(certificate)
-
 		return writeExternalCert(certificate, caBundle, keyBytes, certLocation)
 	}
 
@@ -1101,7 +1097,7 @@ func getEphemeralTLSConfig(cfg *Config, keyRing keychain.KeyRing) (
 	}
 
 	var externalCertData tls.Certificate
-	if cfg.ExternalSSLProvider == "zerossl" {
+	if cfg.ExternalSSLProvider != "" {
 		externalCertData, err = createExternalCert(
 			cfg, keyBytes, externalSSLCertPath,
 		)
@@ -1120,7 +1116,7 @@ func getEphemeralTLSConfig(cfg *Config, keyRing keychain.KeyRing) (
 	}
 
 	certList := []tls.Certificate{certData}
-	if cfg.ExternalSSLProvider == "zerossl" {
+	if cfg.ExternalSSLProvider != "" {
 		certList = append(certList, externalCertData)
 	}
 
