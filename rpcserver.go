@@ -1070,6 +1070,10 @@ func (r *rpcServer) sendCoinsOnChain(paymentMap map[string]int64,
 	return &txHash, nil
 }
 
+func (r *rpcServer) Ping(_ context.Context, in *lnrpc.PingRequest) (*lnrpc.PingResponse, error) {
+	return &lnrpc.PingResponse{Pong: "pong!"}, nil
+}
+
 // ListUnspent returns useful information about each unspent output owned by the
 // wallet, as reported by the underlying `ListUnspentWitness`; the information
 // returned is: outpoint, amount in satoshis, address, address type,

@@ -24,6 +24,8 @@ option go_package = "github.com/lightningnetwork/lnd/lnrpc";
 
 // Lightning is the main RPC server of the daemon.
 service Lightning {
+    rpc Ping (PingRequest) returns (PingResponse);
+
     /* lncli: `walletbalance`
     WalletBalance returns total unspent outputs(confirmed and unconfirmed), all
     confirmed unspent outputs and all unconfirmed unspent outputs under control
@@ -2684,6 +2686,13 @@ message NetworkInfo {
 
     // TODO(roasbeef): fee rate info, expiry
     //  * also additional RPC for tracking fee info once in
+}
+
+message PingRequest {
+}
+
+message PingResponse {
+    string pong = 1;
 }
 
 message StopRequest {

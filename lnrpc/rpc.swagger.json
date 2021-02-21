@@ -1789,6 +1789,28 @@
         ]
       }
     },
+    "/v1/ping": {
+      "get": {
+        "operationId": "Ping",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/lnrpcPingResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "Lightning"
+        ]
+      }
+    },
     "/v1/signmessage": {
       "post": {
         "summary": "lncli: `signmessage`\nSignMessage signs a message with this node's private key. The returned\nsignature string is `zbase32` encoded and pubkey recoverable, meaning that\nonly the message digest and signature are needed for verification.",
@@ -5016,6 +5038,14 @@
         "output_index": {
           "type": "integer",
           "format": "int64"
+        }
+      }
+    },
+    "lnrpcPingResponse": {
+      "type": "object",
+      "properties": {
+        "pong": {
+          "type": "string"
         }
       }
     },

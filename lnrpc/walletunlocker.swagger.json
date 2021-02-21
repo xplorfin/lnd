@@ -120,6 +120,28 @@
         ]
       }
     },
+    "/v1/ping": {
+      "get": {
+        "operationId": "Ping",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/lnrpcPingResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "WalletUnlocker"
+        ]
+      }
+    },
     "/v1/unlockwallet": {
       "post": {
         "summary": "lncli: `unlock`\nUnlockWallet is used at startup of lnd to provide a password to unlock\nthe wallet database.",
@@ -325,6 +347,14 @@
           "type": "string",
           "format": "byte",
           "description": "A single encrypted blob containing all the static channel backups of the\nchannel listed above. This can be stored as a single file or blob, and\nsafely be replaced with any prior/future versions. When using REST, this\nfield must be encoded as base64."
+        }
+      }
+    },
+    "lnrpcPingResponse": {
+      "type": "object",
+      "properties": {
+        "pong": {
+          "type": "string"
         }
       }
     },

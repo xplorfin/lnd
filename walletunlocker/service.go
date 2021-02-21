@@ -160,6 +160,10 @@ func New(chainDir string, params *chaincfg.Params, noFreelistSync bool,
 	}
 }
 
+func (u *UnlockerService) Ping(_ context.Context, in *lnrpc.PingRequest) (*lnrpc.PingResponse, error) {
+	return &lnrpc.PingResponse{Pong: "pong!"}, nil
+}
+
 // GenSeed is the first method that should be used to instantiate a new lnd
 // instance. This method allows a caller to generate a new aezeed cipher seed
 // given an optional passphrase. If provided, the passphrase will be necessary

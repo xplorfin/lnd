@@ -4,6 +4,8 @@ config_version: 3
 http:
   rules:
     # rpc.proto
+    - selector: lnrpc.Lightning.Ping
+      get: "/v1/ping"
     - selector: lnrpc.Lightning.WalletBalance
       get: "/v1/balance/blockchain"
     - selector: lnrpc.Lightning.ChannelBalance
@@ -154,6 +156,8 @@ http:
     - selector: lnrpc.WalletUnlocker.ChangePassword
       post: "/v1/changepassword"
       body: "*"
+    - selector: lnrpc.WalletUnlocker.Ping
+      get: "/v1/ping"
 
     # autopilotrpc/autopilot.proto
     - selector: autopilotrpc.Autopilot.Status

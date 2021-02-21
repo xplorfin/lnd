@@ -27,6 +27,7 @@ option go_package = "github.com/lightningnetwork/lnd/lnrpc";
 // WalletUnlocker is a service that is used to set up a wallet password for
 // lnd at first startup, and unlock a previously set up wallet.
 service WalletUnlocker {
+    rpc Ping (PingRequest) returns (PingResponse);
     /*
     GenSeed is the first method that should be used to instantiate a new lnd
     instance. This method allows a caller to generate a new aezeed cipher seed
