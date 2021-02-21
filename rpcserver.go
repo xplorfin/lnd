@@ -221,6 +221,10 @@ func stringInSlice(a string, slice []string) bool {
 // the permissions they require.
 func MainRPCServerPermissions() map[string][]bakery.Op {
 	return map[string][]bakery.Op{
+		"/lnrpc.Lightning/Ping": {{
+			Entity: "info",
+			Action: "read",
+		}},
 		"/lnrpc.Lightning/SendCoins": {{
 			Entity: "onchain",
 			Action: "write",
