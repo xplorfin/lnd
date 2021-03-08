@@ -24,6 +24,15 @@ import (
 	"github.com/lightningnetwork/lnd/zpay32"
 )
 
+const (
+	// DefaultMaxParts is the default number of splits we'll possibly use
+	// for MPP when the user is attempting to send a payment.
+	//
+	// TODO(roasbeef): make this value dynamic based on expected number of
+	// attempts for given amount
+	DefaultMaxParts = 16
+)
+
 // RouterBackend contains the backend implementation of the router rpc sub
 // server calls.
 type RouterBackend struct {
@@ -95,6 +104,13 @@ type MissionControl interface {
 	// pair.
 	GetPairHistorySnapshot(fromNode,
 		toNode route.Vertex) routing.TimedPairResult
+
+	// GetConfig gets mission control's current config.
+	GetConfig() *routing.MissionControlConfig
+
+	// SetConfig sets mission control's config to the values provided, if
+	// they are valid.
+	SetConfig(cfg *routing.MissionControlConfig) error
 }
 
 // QueryRoutes attempts to query the daemons' Channel Router for a possible
@@ -547,13 +563,22 @@ func (r *RouterBackend) extractIntentFromSendRequest(
 	}
 	payIntent.CltvLimit = cltvLimit
 
-	// Take max htlcs from the request. Map zero to one for backwards
-	// compatibility.
+	// Attempt to parse the max parts value set by the user, if this value
+	// isn't set, then we'll use the current default value for this
+	// setting.
 	maxParts := rpcPayReq.MaxParts
 	if maxParts == 0 {
-		maxParts = 1
+		maxParts = DefaultMaxParts
 	}
 	payIntent.MaxParts = maxParts
+
+	// If this payment had a max shard amount specified, then we'll apply
+	// that now, which'll force us to always make payment splits smaller
+	// than this.
+	if rpcPayReq.MaxShardSizeMsat > 0 {
+		shardAmtMsat := lnwire.MilliSatoshi(rpcPayReq.MaxShardSizeMsat)
+		payIntent.MaxShardAmt = &shardAmtMsat
+	}
 
 	// Take fee limit from request.
 	payIntent.FeeLimit, err = lnrpc.UnmarshallAmt(
@@ -648,6 +673,10 @@ func (r *RouterBackend) extractIntentFromSendRequest(
 			payIntent.Amount = *payReq.MilliSat
 		}
 
+		if !payReq.Features.HasFeature(lnwire.MPPOptional) {
+			payIntent.MaxParts = 1
+		}
+
 		copy(payIntent.PaymentHash[:], payReq.PaymentHash[:])
 		destKey := payReq.Destination.SerializeCompressed()
 		copy(payIntent.Target[:], destKey)
@@ -693,6 +722,15 @@ func (r *RouterBackend) extractIntentFromSendRequest(
 		features, err := UnmarshalFeatures(rpcPayReq.DestFeatures)
 		if err != nil {
 			return nil, err
+		}
+
+		// If the payment addresses is specified, then we'll also
+		// populate that now as well.
+		if len(rpcPayReq.PaymentAddr) != 0 {
+			var payAddr [32]byte
+			copy(payAddr[:], rpcPayReq.PaymentAddr)
+
+			payIntent.PaymentAddr = &payAddr
 		}
 
 		payIntent.DestFeatures = features
@@ -852,6 +890,7 @@ func (r *RouterBackend) MarshalHTLCAttempt(
 	}
 
 	rpcAttempt := &lnrpc.HTLCAttempt{
+		AttemptId:     htlc.AttemptID,
 		AttemptTimeNs: MarshalTimeNano(htlc.AttemptTime),
 		Route:         route,
 	}

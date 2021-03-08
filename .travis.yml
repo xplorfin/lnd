@@ -1,7 +1,6 @@
 language: go
 cache:
   directories:
-    - $DOWNLOAD_CACHE
     - $GOCACHE
     - $GOPATH/pkg/mod
     - $GOPATH/src/github.com/btcsuite
@@ -19,14 +18,14 @@ go:
   # If you change this value, please change it in the following files as well:
   # /Dockerfile
   # /dev.Dockerfile
+  # /make/builder.Dockerfile
   # /.github/workflows/main.yml
   # /.github/workflows/release.yml
-  - "1.15.6"
+  - "1.15.7"
 
 env:
   global:
     - GOCACHE=$HOME/.go-build
-    - DOWNLOAD_CACHE=$HOME/download_cache
     - BITCOIN_VERSION=0.20.1
 
 sudo: required
@@ -35,11 +34,6 @@ jobs:
   include:
     - stage: Sanity Check
       name: Lint and compile
-      before_script:
-        # Install the RPC tools as a before step so Travis collapses the output
-        # after it's done.
-        - ./scripts/install_travis_proto.sh
-
       script:
         # Step 1: Make sure no diff is produced when compiling with the correct
         # version.
@@ -61,6 +55,11 @@ jobs:
       script:
         - bash ./scripts/install_bitcoind.sh
         - make itest-parallel backend=bitcoind
+
+    - name: Bitcoind Integration with etcd (txindex enabled)
+      script:
+        - bash ./scripts/install_bitcoind.sh
+        - make itest-parallel backend=bitcoind etcd=1
 
     - name: Bitcoind Integration (txindex disabled)
       script:

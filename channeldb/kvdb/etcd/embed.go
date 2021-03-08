@@ -21,6 +21,12 @@ const (
 	// embedded etcd servers. Ports are monotonically increasing starting
 	// from this number and are determined by the results of getFreePort().
 	defaultEtcdPort = 2379
+
+	// defaultNamespace is the namespace we'll use in our embedded etcd
+	// instance. Since it is only used for testing, we'll use the namespace
+	// name "test/" for this. Note that the namespace can be any string,
+	// the trailing / is not required.
+	defaultNamespace = "test/"
 )
 
 var (
@@ -55,7 +61,9 @@ func getFreePort() int {
 // NewEmbeddedEtcdInstance creates an embedded etcd instance for testing,
 // listening on random open ports. Returns the backend config and a cleanup
 // func that will stop the etcd instance.
-func NewEmbeddedEtcdInstance(path string) (*BackendConfig, func(), error) {
+func NewEmbeddedEtcdInstance(path string, clientPort, peerPort uint16) (
+	*BackendConfig, func(), error) {
+
 	cfg := embed.NewConfig()
 	cfg.Dir = path
 
@@ -63,9 +71,17 @@ func NewEmbeddedEtcdInstance(path string) (*BackendConfig, func(), error) {
 	cfg.MaxTxnOps = 8192
 	cfg.MaxRequestBytes = 16384 * 1024
 
-	// Listen on random free ports.
-	clientURL := fmt.Sprintf("127.0.0.1:%d", getFreePort())
-	peerURL := fmt.Sprintf("127.0.0.1:%d", getFreePort())
+	// Listen on random free ports if no ports were specified.
+	if clientPort == 0 {
+		clientPort = uint16(getFreePort())
+	}
+
+	if peerPort == 0 {
+		peerPort = uint16(getFreePort())
+	}
+
+	clientURL := fmt.Sprintf("127.0.0.1:%d", clientPort)
+	peerURL := fmt.Sprintf("127.0.0.1:%d", peerPort)
 	cfg.LCUrls = []url.URL{{Host: clientURL}}
 	cfg.LPUrls = []url.URL{{Host: peerURL}}
 
@@ -90,6 +106,7 @@ func NewEmbeddedEtcdInstance(path string) (*BackendConfig, func(), error) {
 		User:               "user",
 		Pass:               "pass",
 		InsecureSkipVerify: true,
+		Namespace:          defaultNamespace,
 	}
 
 	return connConfig, func() {

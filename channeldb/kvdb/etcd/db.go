@@ -12,6 +12,7 @@ import (
 
 	"github.com/btcsuite/btcwallet/walletdb"
 	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/clientv3/namespace"
 	"github.com/coreos/etcd/pkg/transport"
 )
 
@@ -153,6 +154,9 @@ type BackendConfig struct {
 	// name spaces.
 	Prefix string
 
+	// Namespace is the etcd namespace that we'll use for all keys.
+	Namespace string
+
 	// CollectCommitStats indicates wheter to commit commit stats.
 	CollectCommitStats bool
 }
@@ -184,10 +188,14 @@ func newEtcdBackend(config BackendConfig) (*db, error) {
 		TLS:                tlsConfig,
 		MaxCallSendMsgSize: 16384*1024 - 1,
 	})
-
 	if err != nil {
 		return nil, err
 	}
+
+	// Apply the namespace.
+	cli.KV = namespace.NewKV(cli.KV, config.Namespace)
+	cli.Watcher = namespace.NewWatcher(cli.Watcher, config.Namespace)
+	cli.Lease = namespace.NewLease(cli.Lease, config.Namespace)
 
 	backend := &db{
 		cli:     cli,
@@ -295,16 +303,4 @@ func (db *db) Copy(w io.Writer) error {
 // This function is part of the walletdb.Db interface implementation.
 func (db *db) Close() error {
 	return db.cli.Close()
-}
-
-// Batch opens a database read/write transaction and executes the function f
-// with the transaction passed as a parameter.  After f exits, if f did not
-// error, the transaction is committed.  Otherwise, if f did error, the
-// transaction is rolled back.  If the rollback fails, the original error
-// returned by f is still returned.  If the commit fails, the commit error is
-// returned.
-//
-// Batch is only useful when there are multiple goroutines calling it.
-func (db *db) Batch(apply func(tx walletdb.ReadWriteTx) error) error {
-	return db.Update(apply, func() {})
 }

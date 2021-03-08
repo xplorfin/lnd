@@ -12,13 +12,13 @@ defaults:
 env:
   DOCKER_REPO: entropybtc
   DOCKER_IMAGE: lnd
-  
   # If you change this value, please change it in the following files as well:
   # /.travis.yml
   # /Dockerfile
   # /dev.Dockerfile
+  # /make/builder.Dockerfile
   # /.github/workflows/main.yml
-  GO_VERSION: 1.15.6
+  GO_VERSION: 1.15.7
 
 jobs:
   main:
@@ -27,6 +27,8 @@ jobs:
     steps:
       - name: git checkout
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       # see: https://github.com/actions/checkout/issues/290
       - name: Fetch Tags
@@ -46,7 +48,7 @@ jobs:
       - name: setup go ${{ env.GO_VERSION }}
         uses: actions/setup-go@v2
         with:
-          go-version: '~${{ env.GO_VERSION }}'
+          go-version: '${{ env.GO_VERSION }}'
 
       - name: Set env
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
@@ -55,7 +57,7 @@ jobs:
         run: SKIP_VERSION_CHECK=1 make release tag=${{ env.RELEASE_VERSION }}
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: lightninglabs/gh-actions/action-gh-release@2021.01.25.00
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -76,10 +78,10 @@ jobs:
             curl https://keybase.io/jalavosus/pgp_keys.asc?fingerprint=b417aa515aecc5ea012bbf0471ed6a26942de771 | gpg --import
             ```
 
-            Once you have the required PGP keys, you can verify the release (assuming `manifest-${{ env.RELEASE_VERSION }}.txt` and `manifest-${{ env.RELEASE_VERSION }}.txt.sig` are in the current directory) with:
+            Once you have the required PGP keys, you can verify the release (assuming `manifest-roasbeef-${{ env.RELEASE_VERSION }}.sig` and `manifest-${{ env.RELEASE_VERSION }}.txt` are in the current directory) with:
 
             ```
-            gpg --verify manifest-${{ env.RELEASE_VERSION }}.txt.sig
+            gpg --verify manifest-roasbeef-${{ env.RELEASE_VERSION }}.sig manifest-${{ env.RELEASE_VERSION }}.txt
             ```
 
             You should see the following if the verification was successful:
@@ -94,8 +96,7 @@ jobs:
             That will verify the signature of the manifest file, which ensures integrity and authenticity of the archive you've downloaded locally containing the binaries. Next, depending on your operating system, you should then re-compute the `sha256` hash of the archive with `shasum -a 256 <filename>`, compare it with the corresponding one in the manifest file, and ensure they match *exactly*.
 
             ## Verifying the Release Timestamp
-
-            From this new version onwards, in addition time-stamping the _git tag_ with [OpenTimeStamps](https://opentimestamps.org/), we'll also now timestamp the manifest file along with its signature. Two new files are now included along with the rest of our release artifacts: ` manifest-${{ env.RELEASE_VERSION }}.txt.sig.ots` and `manifest-${{ env.RELEASE_VERSION }}.txt.ots`.
+            From this new version onwards, in addition time-stamping the _git tag_ with [OpenTimeStamps](https://opentimestamps.org/), we'll also now timestamp the manifest file along with its signature. Two new files are now included along with the rest of our release artifacts: ` manifest-roasbeef-${{ env.RELEASE_VERSION }}.txt.asc.ots`.
 
             Assuming you have the opentimestamps client installed locally, the timestamps can be verified with the following commands:
             ```
@@ -123,7 +124,23 @@ jobs:
             gpg: Good signature from "James Alavosus (entropy.rocks) () <james@entropy.rocks>" [ultimate]
             ```
 
+
             # Building the Contained Release
+#=======
+#            ## Verifying the Docker Images
+#
+#            To verify the `lnd` and `lncli` binaries inside the docker images against the signed, reproducible release binaries, there is a verification script in the image that can be called (before starting the container for example):
+#
+#            ```shell
+#            $ docker pull lightninglabs/lnd:${{ env.RELEASE_VERSION }}
+#            $ docker run --rm --entrypoint="" lightninglabs/lnd:${{ env.RELEASE_VERSION }} /verify-install.sh
+#            $ OK=$?
+#            $ if [ "$OK" -ne "0" ]; then echo "Verification failed!"; exit 1; done
+#            $ docker run lightninglabs/lnd [command-line options]
+#            ```
+#
+#            # Building the Contained Release
+#>>>>>>> origin/master
 
             Users are able to rebuild the target release themselves without having to fetch any of the dependencies. In order to do so, assuming
             that `vendor.tar.gz` and `lnd-source-${{ env.RELEASE_VERSION }}.tar.gz` are in the current directory, follow these steps:

@@ -36,13 +36,19 @@ type BoltConfig struct {
 
 // EtcdConfig holds etcd configuration.
 type EtcdConfig struct {
-	Embedded bool `long:"embedded" description:"Use embedded etcd instance instead of the external one."`
+	Embedded bool `long:"embedded" description:"Use embedded etcd instance instead of the external one. Note: use for testing only."`
+
+	EmbeddedClientPort uint16 `long:"embedded_client_port" description:"Client port to use for the embedded instance. Note: use for testing only."`
+
+	EmbeddedPeerPort uint16 `long:"embedded_peer_port" description:"Peer port to use for the embedded instance. Note: use for testing only."`
 
 	Host string `long:"host" description:"Etcd database host."`
 
 	User string `long:"user" description:"Etcd database user."`
 
 	Pass string `long:"pass" description:"Password for the database user."`
+
+	Namespace string `long:"namespace" description:"The etcd namespace to use."`
 
 	CertFile string `long:"cert_file" description:"Path to the TLS certificate for etcd RPC."`
 

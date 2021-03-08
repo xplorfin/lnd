@@ -27,6 +27,7 @@ import (
 	"github.com/lightningnetwork/lnd/chanbackup"
 	"github.com/lightningnetwork/lnd/channeldb"
 	"github.com/lightningnetwork/lnd/discovery"
+	"github.com/lightningnetwork/lnd/funding"
 	"github.com/lightningnetwork/lnd/htlcswitch"
 	"github.com/lightningnetwork/lnd/htlcswitch/hodl"
 	"github.com/lightningnetwork/lnd/input"
@@ -95,8 +96,8 @@ const (
 	defaultHostSampleInterval = time.Minute * 5
 
 	defaultChainInterval = time.Minute
-	defaultChainTimeout  = time.Second * 10
-	defaultChainBackoff  = time.Second * 30
+	defaultChainTimeout  = time.Second * 30
+	defaultChainBackoff  = time.Minute * 2
 	defaultChainAttempts = 3
 
 	// Set defaults for a health check which ensures that we have space
@@ -243,7 +244,7 @@ type Config struct {
 	MaxPendingChannels int    `long:"maxpendingchannels" description:"The maximum number of incoming pending channels permitted per peer."`
 	BackupFilePath     string `long:"backupfilepath" description:"The target location of the channel backup file"`
 
-	FeeURL string `long:"feeurl" description:"Optional URL for external fee estimation. If no URL is specified, the method for fee estimation will depend on the chosen backend and network."`
+	FeeURL string `long:"feeurl" description:"Optional URL for external fee estimation. If no URL is specified, the method for fee estimation will depend on the chosen backend and network. Must be set for neutrino on mainnet."`
 
 	Bitcoin      *lncfg.Chain    `group:"Bitcoin" namespace:"bitcoin"`
 	BtcdMode     *lncfg.Btcd     `group:"btcd" namespace:"btcd"`
@@ -313,6 +314,8 @@ type Config struct {
 	GcCanceledInvoicesOnTheFly bool `long:"gc-canceled-invoices-on-the-fly" description:"If true, we'll delete newly canceled invoices on the fly."`
 
 	Routing *lncfg.Routing `group:"routing" namespace:"routing"`
+
+	Gossip *lncfg.Gossip `group:"gossip" namespace:"gossip"`
 
 	Workers *lncfg.Workers `group:"workers" namespace:"workers"`
 
@@ -420,7 +423,7 @@ func DefaultConfig() Config {
 		Autopilot: &lncfg.AutoPilot{
 			MaxChannels:    5,
 			Allocation:     0.6,
-			MinChannelSize: int64(minChanFundingSize),
+			MinChannelSize: int64(funding.MinChanFundingSize),
 			MaxChannelSize: int64(MaxFundingAmount),
 			MinConfs:       1,
 			ConfTarget:     autopilot.DefaultConfTarget,
@@ -436,7 +439,7 @@ func DefaultConfig() Config {
 		HeightHintCacheQueryDisable:   defaultHeightHintCacheQueryDisable,
 		Alias:                         defaultAlias,
 		Color:                         defaultColor,
-		MinChanSize:                   int64(minChanFundingSize),
+		MinChanSize:                   int64(funding.MinChanFundingSize),
 		MaxChanSize:                   int64(0),
 		DefaultRemoteMaxHtlcs:         defaultRemoteMaxHtlcs,
 		NumGraphSyncPeers:             defaultMinPeers,
@@ -483,6 +486,7 @@ func DefaultConfig() Config {
 				Backoff:  defaultTLSBackoff,
 			},
 		},
+		Gossip:                  &lncfg.Gossip{},
 		MaxOutgoingCltvExpiry:   htlcswitch.DefaultMaxOutgoingCltvExpiry,
 		MaxChannelFeeAllocation: htlcswitch.DefaultMaxLinkFeeAllocation,
 		MaxCommitFeeRateAnchors: lnwallet.DefaultAnchorsCommitMaxFeeRateSatPerVByte,
@@ -664,6 +668,7 @@ func ValidateConfig(cfg Config, usageMessage string) (*Config, error) {
 	cfg.Tor.PrivateKeyPath = CleanAndExpandPath(cfg.Tor.PrivateKeyPath)
 	cfg.Tor.WatchtowerKeyPath = CleanAndExpandPath(cfg.Tor.WatchtowerKeyPath)
 	cfg.Watchtower.TowerDir = CleanAndExpandPath(cfg.Watchtower.TowerDir)
+	cfg.BackupFilePath = CleanAndExpandPath(cfg.BackupFilePath)
 
 	// Create the lnd directory and all other sub directories if they don't
 	// already exist. This makes sure that directory trees are also created
@@ -724,8 +729,8 @@ func ValidateConfig(cfg Config, usageMessage string) (*Config, error) {
 
 	// Ensure that the specified values for the min and max channel size
 	// are within the bounds of the normal chan size constraints.
-	if cfg.Autopilot.MinChannelSize < int64(minChanFundingSize) {
-		cfg.Autopilot.MinChannelSize = int64(minChanFundingSize)
+	if cfg.Autopilot.MinChannelSize < int64(funding.MinChanFundingSize) {
+		cfg.Autopilot.MinChannelSize = int64(funding.MinChanFundingSize)
 	}
 	if cfg.Autopilot.MaxChannelSize > int64(MaxFundingAmount) {
 		cfg.Autopilot.MaxChannelSize = int64(MaxFundingAmount)
@@ -742,9 +747,9 @@ func ValidateConfig(cfg Config, usageMessage string) (*Config, error) {
 	// If unset (marked by 0 value), then enforce proper default.
 	if cfg.MaxChanSize == 0 {
 		if cfg.ProtocolOptions.Wumbo() {
-			cfg.MaxChanSize = int64(MaxBtcFundingAmountWumbo)
+			cfg.MaxChanSize = int64(funding.MaxBtcFundingAmountWumbo)
 		} else {
-			cfg.MaxChanSize = int64(MaxBtcFundingAmount)
+			cfg.MaxChanSize = int64(funding.MaxBtcFundingAmount)
 		}
 	}
 
@@ -892,7 +897,7 @@ func ValidateConfig(cfg Config, usageMessage string) (*Config, error) {
 			"litecoin.active must be set to 1 (true)", funcName)
 
 	case cfg.Litecoin.Active:
-		err := cfg.Litecoin.Validate(minTimeLockDelta, minLtcRemoteDelay)
+		err := cfg.Litecoin.Validate(minTimeLockDelta, funding.MinLtcRemoteDelay)
 		if err != nil {
 			return nil, err
 		}
@@ -976,7 +981,7 @@ func ValidateConfig(cfg Config, usageMessage string) (*Config, error) {
 		// Finally we'll register the litecoin chain as our current
 		// primary chain.
 		cfg.registeredChains.RegisterPrimaryChain(chainreg.LitecoinChain)
-		MaxFundingAmount = maxLtcFundingAmount
+		MaxFundingAmount = funding.MaxLtcFundingAmount
 
 	case cfg.Bitcoin.Active:
 		// Multiple networks can't be selected simultaneously.  Count
@@ -1017,7 +1022,7 @@ func ValidateConfig(cfg Config, usageMessage string) (*Config, error) {
 			return nil, err
 		}
 
-		err := cfg.Bitcoin.Validate(minTimeLockDelta, minBtcRemoteDelay)
+		err := cfg.Bitcoin.Validate(minTimeLockDelta, funding.MinBtcRemoteDelay)
 		if err != nil {
 			return nil, err
 		}
@@ -1095,8 +1100,8 @@ func ValidateConfig(cfg Config, usageMessage string) (*Config, error) {
 
 	// Ensure that the specified values for the min and max channel size
 	// don't are within the bounds of the normal chan size constraints.
-	if cfg.Autopilot.MinChannelSize < int64(minChanFundingSize) {
-		cfg.Autopilot.MinChannelSize = int64(minChanFundingSize)
+	if cfg.Autopilot.MinChannelSize < int64(funding.MinChanFundingSize) {
+		cfg.Autopilot.MinChannelSize = int64(funding.MinChanFundingSize)
 	}
 	if cfg.Autopilot.MaxChannelSize > int64(MaxFundingAmount) {
 		cfg.Autopilot.MaxChannelSize = int64(MaxFundingAmount)
@@ -1321,6 +1326,10 @@ func ValidateConfig(cfg Config, usageMessage string) (*Config, error) {
 		return nil, fmt.Errorf("default-remote-max-htlcs (%v) must be "+
 			"less than %v", cfg.DefaultRemoteMaxHtlcs,
 			maxRemoteHtlcs)
+	}
+
+	if err := cfg.Gossip.Parse(); err != nil {
+		return nil, err
 	}
 
 	// Validate the subconfigs for workers, caches, and the tower client.

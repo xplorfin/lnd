@@ -281,7 +281,6 @@ func (cfg NodeConfig) genArgs() []string {
 	args = append(args, fmt.Sprintf("--invoicemacaroonpath=%v", cfg.InvoiceMacPath))
 	args = append(args, fmt.Sprintf("--trickledelay=%v", trickleDelay))
 	args = append(args, fmt.Sprintf("--profile=%d", cfg.ProfilePort))
-	args = append(args, fmt.Sprintf("--protocol.legacy.no-gossip-throttle"))
 
 	if !cfg.HasSeed {
 		args = append(args, "--noseedbackup")
@@ -297,6 +296,19 @@ func (cfg NodeConfig) genArgs() []string {
 
 	if cfg.Etcd {
 		args = append(args, "--db.backend=etcd")
+		args = append(args, "--db.etcd.embedded")
+		args = append(
+			args, fmt.Sprintf(
+				"--db.etcd.embedded_client_port=%v",
+				nextAvailablePort(),
+			),
+		)
+		args = append(
+			args, fmt.Sprintf(
+				"--db.etcd.embedded_peer_port=%v",
+				nextAvailablePort(),
+			),
+		)
 		args = append(args, "--db.etcd.embedded")
 	}
 
